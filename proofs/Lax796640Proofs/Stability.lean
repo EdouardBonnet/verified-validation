@@ -1,5 +1,5 @@
 import Lax796640.Stability
-import Lax796640Proofs.ProofNetworks
+import Lax796640Proofs.Common
 
 namespace Lax796640Proofs.Stability
 
@@ -39,6 +39,7 @@ theorem discharge_assumptions (n : Network) (initial replacement : List Nat)
 ---
 conclusion: Lax796640.Stability.rules_order_irrelevant
 assumptions:
+  - Lax796640.Stability.extension_preserves
 ---
 Rule membership is the only feature of the rule list used by derivations.
 -/
@@ -46,8 +47,8 @@ theorem rules_order_irrelevant (left right : Network)
     (sameRules : ∀ r, r ∈ left.rules ↔ r ∈ right.rules)
     (initial : List Nat) (a : Nat) :
     Derivable left initial a ↔ Derivable right initial a :=
-  ⟨extension_preserves left right (fun r hr => (sameRules r).1 hr) initial a,
-   extension_preserves right left (fun r hr => (sameRules r).2 hr) initial a⟩
+  ⟨Lax796640.Stability.extension_preserves left right (fun r hr => (sameRules r).1 hr) initial a,
+   Lax796640.Stability.extension_preserves right left (fun r hr => (sameRules r).2 hr) initial a⟩
 
 theorem rename_forward (n : Network) (f : Nat → Nat) (initial : List Nat)
     (a : Nat) (derived : Derivable n initial a) :
@@ -98,6 +99,8 @@ theorem renaming_exact (n : Network) (f : Nat → Nat) (injective : Function.Inj
 ---
 conclusion: Lax796640.Stability.closure_idempotent
 assumptions:
+  - Lax796640.ProofNetworks.closure_exact
+  - Lax796640.Stability.discharge_assumptions
 ---
 An assumption in the first closure already has a derivation from the original
 assumptions. Substituting those derivations makes a second closure redundant.
@@ -105,15 +108,17 @@ assumptions. Substituting those derivations makes a second closure redundant.
 theorem closure_idempotent (n : Network) (h : WellFormed n) (initial : List Nat)
     (admitted : ∀ a ∈ initial, a ∈ n.statements) (a : Nat) :
     a ∈ closure n (closure n initial) ↔ a ∈ closure n initial := by
-  have exactFirst := ProofNetworks.closure_exact n h initial admitted
+  have exactFirst := Lax796640.ProofNetworks.closure_exact n h initial admitted
   have inNetwork : ∀ b ∈ closure n initial, b ∈ n.statements := by
     intro b hb
-    exact ProofNetworks.derivable_within n h initial admitted b ((exactFirst b).1 hb)
-  rw [ProofNetworks.closure_exact n h (closure n initial) inNetwork]
+    cases (exactFirst b).1 hb with
+    | assumption hi => exact admitted b hi
+    | apply hr _ => exact (h.2.2 _ hr).1
+  rw [Lax796640.ProofNetworks.closure_exact n h (closure n initial) inNetwork]
   constructor
   · intro derived
     apply (exactFirst a).2
-    exact discharge_assumptions n (closure n initial) initial
+    exact Lax796640.Stability.discharge_assumptions n (closure n initial) initial
       (fun b hb => (exactFirst b).1 hb) a derived
   · exact Derivable.assumption
 

@@ -9,13 +9,6 @@ namespace Lax796640Proofs.ProofNetworks
 
 open Lax796640.Declarations Lax796640.ProofNetworks
 
-theorem derivable_within (n : Network) (h : WellFormed n) (initial : List Nat)
-    (admitted : ∀ a ∈ initial, a ∈ n.statements) (a : Nat)
-    (derived : Derivable n initial a) : a ∈ n.statements := by
-  cases derived with
-  | assumption ha => exact admitted a ha
-  | apply hr _ => exact (h.2.2 _ hr).1
-
 @[simp] theorem mem_advance (n : Network) (known : List Nat) (a : Nat) :
     a ∈ advance n known ↔ a ∈ known ∨
       ∃ r ∈ n.rules, (∀ b ∈ r.assumptions, b ∈ known) ∧ r.conclusion = a := by
@@ -107,6 +100,7 @@ theorem closure_closed (n : Network) (h : WellFormed n) (initial : List Nat)
 ---
 conclusion: Lax796640.ProofNetworks.closure_exact
 assumptions:
+  - Lax796640.ProofNetworks.closure_closed
 ---
 Each round only adds valid rule conclusions. Conversely, the fixed point
 contains the leaves and is closed under every rule in a finite derivation.
@@ -119,7 +113,7 @@ theorem closure_exact (n : Network) (h : WellFormed n) (initial : List Nat)
   · intro derived
     induction derived with
     | assumption ha => exact closeFor_initial n _ initial _ ha
-    | apply hr _ ih => exact closure_closed n h initial admitted _ hr ih
+    | apply hr _ ih => exact Lax796640.ProofNetworks.closure_closed n h initial admitted _ hr ih
 
 /--
 ---

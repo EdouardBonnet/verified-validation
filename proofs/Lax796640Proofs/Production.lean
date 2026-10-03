@@ -1,6 +1,5 @@
 import Lax796640.Production
-import Lax796640Proofs.Pipeline
-import Lax796640Proofs.RelativeSoundness
+import Lax796640Proofs.Common
 
 namespace Lax796640Proofs.Production
 
@@ -12,6 +11,10 @@ open Lax796640.Production
 ---
 conclusion: Lax796640.Production.classification_exact
 assumptions:
+  - Lax796640.Certificates.check_exact
+  - Lax796640.Pipeline.approval_requires_evidence
+  - Lax796640.Validation.accepted_network_wellFormed
+  - Lax796640.Validation.validate_exact
 ---
 Successful execution identifies the very inspected snapshot that passed the
 controller and validator. The certificate result is exact for that network,
@@ -36,12 +39,12 @@ theorem classification_exact (key : ArtifactKey) (events : List Event)
             have resultEq : { assumed := initial.eraseDups, established := known : Classification } = result := by
               simpa [checked] using accepted
             subst result
-            have evidence := Pipeline.approval_requires_evidence key events data approved
+            have evidence := Lax796640.Pipeline.approval_requires_evidence key events data approved
             have valid := evidence.2.2.2.2.2
             refine ⟨rfl, data, rfl, valid, ?_⟩
             intro a
-            exact Certificates.check_exact (network data)
-              (Validation.accepted_network_wellFormed data ((Validation.validate_exact data).2 valid))
+            exact Lax796640.Certificates.check_exact (network data)
+              (Lax796640.Validation.accepted_network_wellFormed data ((Lax796640.Validation.validate_exact data).2 valid))
               initial ((includes_iff _ _).1 admitted) certificate known checked a
       next => simp at accepted
 
@@ -49,6 +52,10 @@ theorem classification_exact (key : ArtifactKey) (events : List Event)
 ---
 conclusion: Lax796640.Production.production_sound
 assumptions:
+  - Lax796640.Production.classification_exact
+  - Lax796640.RelativeSoundness.derivation_sound
+  - Lax796640.RelativeSoundness.validation_rules_sound
+  - Lax796640.Validation.validate_exact
 ---
 The unconditional entry point supplies no assumptions. Exact classification
 therefore gives a finite derivation from sound rules for every proved label,
@@ -60,17 +67,18 @@ theorem production_sound (key : ArtifactKey) (events : List Event)
     (accepted : validateAndProve key events certificate = some result) :
     result.assumed = [] ∧ ∀ a ∈ result.established, meaning a := by
   obtain ⟨assumed, data, approved, valid, exactResult⟩ :=
-    classification_exact key events [] certificate result accepted
+    Lax796640.Production.classification_exact key events [] certificate result accepted
   refine ⟨assumed, ?_⟩
   intro a ha
-  exact RelativeSoundness.derivation_sound (network data) meaning
-    (RelativeSoundness.validation_rules_sound data meaning (trusted data approved)
-      ((Validation.validate_exact data).2 valid)) [] (by simp) a ((exactResult a).1 ha)
+  exact Lax796640.RelativeSoundness.derivation_sound (network data) meaning
+    (Lax796640.RelativeSoundness.validation_rules_sound data meaning (trusted data approved)
+      ((Lax796640.Validation.validate_exact data).2 valid)) [] (by simp) a ((exactResult a).1 ha)
 
 /--
 ---
 conclusion: Lax796640.Production.production_rejects_failure
 assumptions:
+  - Lax796640.Pipeline.failure_blocks_approval
 ---
 The final entry point immediately rejects whenever the controller records a
 failure, regardless of the proposed assumptions or certificate.
@@ -78,6 +86,6 @@ failure, regardless of the proposed assumptions or certificate.
 theorem production_rejects_failure (key : ArtifactKey) (events : List Event)
     (failed : Event.failed ∈ events) (initial : List Nat) (certificate : List Step) :
     validateAndClassify key events initial certificate = none := by
-  simp [validateAndClassify, Pipeline.failure_blocks_approval key events failed]
+  simp [validateAndClassify, Lax796640.Pipeline.failure_blocks_approval key events failed]
 
 end Lax796640Proofs.Production

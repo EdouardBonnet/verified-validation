@@ -8,28 +8,6 @@ namespace Lax796640Proofs.Dependencies
 
 open Lax796640.Declarations Lax796640.Dependencies
 
-theorem find_id_exact {α : Type} (xs : List α) (id : α → Nat)
-    (unique : (xs.map id).Nodup) (key : Nat) (x : α) :
-    xs.find? (fun d => id d == key) = some x ↔ x ∈ xs ∧ id x = key := by
-  constructor
-  · intro found
-    exact ⟨List.mem_of_find?_eq_some found, by simpa using List.find?_some found⟩
-  · rintro ⟨hx, keyEq⟩
-    cases found : xs.find? (fun d => id d == key) with
-    | none =>
-        have missing := List.find?_eq_none.mp found x hx
-        simp [keyEq] at missing
-    | some y =>
-        have hy := List.mem_of_find?_eq_some found
-        have ykey : id y = key := by simpa using List.find?_some found
-        have same : y = x := List.inj_on_of_nodup_map unique hy hx (ykey.trans keyEq.symm)
-        simp [same]
-
-theorem declaration_exact (s : Snapshot) (unique : (s.declarations.map Declaration.id).Nodup)
-    (id : Nat) (d : Declaration) :
-    declaration s id = some d ↔ d ∈ s.declarations ∧ d.id = id :=
-  find_id_exact _ _ unique id d
-
 theorem references_within (s : Snapshot) (h : ReferencesWellFormed s)
     (id a : Nat) (ha : a ∈ references s id) :
     a ∈ s.declarations.map Declaration.id := by
@@ -130,6 +108,7 @@ theorem reachable_exact (s : Snapshot) (h : ReferencesWellFormed s)
 ---
 conclusion: Lax796640.Dependencies.axiomsUsed_exact
 assumptions:
+  - Lax796640.Dependencies.reachable_exact
 ---
 Filtering the exact reachability result by declaration kind gives exactly the
 used axioms, including an axiom's dependency on itself.
@@ -137,6 +116,6 @@ used axioms, including an axiom's dependency on itself.
 theorem axiomsUsed_exact (s : Snapshot) (h : ReferencesWellFormed s)
     (start : Nat) (existsStart : ∃ d ∈ s.declarations, d.id = start) (id : Nat) :
     id ∈ axiomsUsed s start ↔ UsesAxiom s start id := by
-  simp [axiomsUsed, UsesAxiom, reachable_exact s h start existsStart id]
+  simp [axiomsUsed, UsesAxiom, Lax796640.Dependencies.reachable_exact s h start existsStart id]
 
 end Lax796640Proofs.Dependencies

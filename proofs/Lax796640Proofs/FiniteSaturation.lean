@@ -1,25 +1,7 @@
-import Lax796640.Declarations
-import Mathlib.Data.Finset.Card
+import Lax796640Proofs.Common
 import Mathlib.Logic.Function.Iterate
-import Mathlib.Tactic
 
 namespace Lax796640Proofs
-
-open Lax796640.Declarations
-
-@[simp] theorem eraseDups_toFinset (xs : List Nat) :
-    xs.eraseDups.toFinset = xs.toFinset := by
-  ext a
-  simp
-
-@[simp] theorem includes_iff (available requested : List Nat) :
-    includes available requested = true ↔ ∀ a ∈ requested, a ∈ available := by
-  simp [includes, List.all_eq_true]
-
-@[simp] theorem sameMembers_iff (left right : List Nat) :
-    sameMembers left right = true ↔ ∀ a, a ∈ left ↔ a ∈ right := by
-  simp only [sameMembers, Bool.and_eq_true, includes_iff]
-  aesop
 
 theorem finite_saturation (ambient : Finset Nat) (next : Finset Nat → Finset Nat)
     (grows : ∀ set, set ⊆ next set)

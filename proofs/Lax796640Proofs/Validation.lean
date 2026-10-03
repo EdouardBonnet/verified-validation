@@ -1,19 +1,10 @@
 import Lax796640.Validation
-import Lax796640Proofs.Dependencies
-import Lax796640Proofs.ProofNetworks
+import Lax796640Proofs.Common
 
 namespace Lax796640Proofs.Validation
 
 open Lax796640.Declarations Lax796640.Dependencies Lax796640.ProofNetworks
 open Lax796640.Validation
-
-instance : LawfulBEq PackageRole where
-  eq_of_beq := by intro a b; cases a <;> cases b <;> decide
-  rfl := by intro a; cases a <;> rfl
-
-instance : LawfulBEq DeclarationKind where
-  eq_of_beq := by intro a b; cases a <;> cases b <;> decide
-  rfl := by intro a; cases a <;> rfl
 
 theorem eraseDups_length_le {α : Type} [BEq α] [LawfulBEq α] (xs : List α) :
     xs.eraseDups.length ≤ xs.length := by
@@ -42,13 +33,13 @@ theorem eraseDups_length_le {α : Type} [BEq α] [LawfulBEq α] (xs : List α) :
 theorem package_exact (s : Snapshot) (unique : (s.packages.map Package.id).Nodup)
     (id : Nat) (p : Package) :
     package s id = some p ↔ p ∈ s.packages ∧ p.id = id :=
-  Dependencies.find_id_exact _ _ unique id p
+  find_id_exact _ _ unique id p
 
 theorem declaration_any (s : Snapshot) (unique : (s.declarations.map Declaration.id).Nodup)
     (id : Nat) (test : Declaration → Bool) :
     (declaration s id).any test = true ↔
       ∃ d ∈ s.declarations, d.id = id ∧ test d = true := by
-  simp only [Option.any_eq_true, Dependencies.declaration_exact s unique]
+  simp only [Option.any_eq_true, declaration_exact s unique]
   aesop
 
 theorem package_role_check (s : Snapshot) (unique : (s.packages.map Package.id).Nodup)
@@ -126,7 +117,7 @@ theorem checkDeclaration_exact (s : Snapshot) (tables : TablesValid s)
   rcases tables with ⟨refs, _, unique, _, _, packageExists, _, _⟩
   obtain ⟨p, hp, pid⟩ := packageExists d present
   have found := (package_exact s unique d.package p).2 ⟨hp, pid⟩
-  have depends := Dependencies.axiomsUsed_exact s refs d.id ⟨d, present, rfl⟩
+  have depends := Lax796640.Dependencies.axiomsUsed_exact s refs d.id ⟨d, present, rfl⟩
   unfold checkDeclaration DeclarationValid
   rw [found]
   simp only [← and_assoc, ← package_exact s unique, found, Option.some.injEq]
@@ -136,7 +127,7 @@ theorem checkDeclaration_exact (s : Snapshot) (tables : TablesValid s)
 theorem assumptionsOf_exact (s : Snapshot) (refs : ReferencesWellFormed s)
     (id : Nat) (existsDeclaration : ∃ d ∈ s.declarations, d.id = id) (a : Nat) :
     a ∈ assumptionsOf s id ↔ UsesAxiom s id a ∧ backgroundAxiom s a = false := by
-  simp [assumptionsOf, Dependencies.axiomsUsed_exact s refs id existsDeclaration]
+  simp [assumptionsOf, Lax796640.Dependencies.axiomsUsed_exact s refs id existsDeclaration]
 
 theorem checkClaim_exact (s : Snapshot) (tables : TablesValid s) (c : Claim) :
     checkClaim s c = true ↔ ClaimValid s c := by
@@ -156,6 +147,7 @@ theorem checkClaim_exact (s : Snapshot) (tables : TablesValid s) (c : Claim) :
 ---
 conclusion: Lax796640.Validation.validate_exact
 assumptions:
+  - Lax796640.Dependencies.axiomsUsed_exact
 ---
 Unique table identifiers make lookups exact. The dependency collector is exact
 as well, so each Boolean check is equivalent to its declarative requirement.
@@ -175,6 +167,8 @@ theorem validate_exact (s : Snapshot) : validate s = true ↔ Valid s := by
 ---
 conclusion: Lax796640.Validation.recorded_assumptions_exact
 assumptions:
+  - Lax796640.Dependencies.axiomsUsed_exact
+  - Lax796640.Validation.validate_exact
 ---
 The stored assumptions come from the actual dependency traversal, with exactly
 the permitted background axioms removed.
@@ -183,7 +177,7 @@ theorem recorded_assumptions_exact (s : Snapshot) (accepted : validate s = true)
     (c : Claim) (present : c ∈ s.claims) (a : Nat) :
     a ∈ assumptionsOf s c.theoremId ↔
       UsesAxiom s c.theoremId a ∧ backgroundAxiom s a = false := by
-  have valid := (validate_exact s).1 accepted
+  have valid := (Lax796640.Validation.validate_exact s).1 accepted
   obtain ⟨d, hd, did, _⟩ := valid.2.2.2 c present
   exact assumptionsOf_exact s valid.1.1 c.theoremId ⟨d, hd, did⟩ a
 
@@ -218,13 +212,15 @@ theorem claim_assumptions_allowed (s : Snapshot) (valid : Valid s)
 ---
 conclusion: Lax796640.Validation.accepted_network_wellFormed
 assumptions:
+  - Lax796640.Validation.recorded_assumptions_exact
+  - Lax796640.Validation.validate_exact
 ---
 Validation supplies unique statement and proof identifiers. Every conclusion
 and recomputed assumption is an admitted concept statement in the table.
 -/
 theorem accepted_network_wellFormed (s : Snapshot) (accepted : validate s = true) :
     WellFormed (network s) := by
-  have valid := (validate_exact s).1 accepted
+  have valid := (Lax796640.Validation.validate_exact s).1 accepted
   refine ⟨valid.1.1.1.filter _, ?_, ?_⟩
   · simpa [network, List.map_map, Function.comp_def] using valid.2.2.1
   · intro r hr
@@ -233,7 +229,7 @@ theorem accepted_network_wellFormed (s : Snapshot) (accepted : validate s = true
     constructor
     · exact statement_in_network s c.statementId (allowed_isStatement s _ _ conclusion)
     · intro a ha
-      obtain ⟨used, notBackground⟩ := (recorded_assumptions_exact s accepted c hc a).1 ha
+      obtain ⟨used, notBackground⟩ := (Lax796640.Validation.recorded_assumptions_exact s accepted c hc a).1 ha
       obtain ⟨proofPackage, allowed⟩ := claim_assumptions_allowed s valid c hc a used notBackground
       exact statement_in_network s a (allowed_isStatement s _ _ allowed)
 

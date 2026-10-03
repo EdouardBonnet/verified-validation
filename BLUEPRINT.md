@@ -166,9 +166,11 @@ to publish a Lax submission.
 
 ## Proof structure
 
-1. [FiniteSaturation](proofs/Lax796640Proofs/FiniteSaturation.lean) proves the
-   shared finite bound. A growing set either has reached a fixed point or gains
-   at least one element. It cannot keep growing beyond its finite ambient set.
+1. [Common](proofs/Lax796640Proofs/Common.lean) supplies shared facts about lists,
+   tests, and unique lookups. [FiniteSaturation](proofs/Lax796640Proofs/FiniteSaturation.lean)
+   proves the shared finite bound: a growing set either has reached a fixed
+   point or gains at least one element. It cannot keep growing beyond its finite
+   ambient set. Neither helper module uses any submission statement axiom.
 2. [Dependencies](proofs/Lax796640Proofs/Dependencies.lean) relates the actual
    list traversal to this finite-set iteration. Each expansion extends paths;
    saturation contains every finite path, including paths through cycles.
@@ -199,11 +201,14 @@ to publish a Lax submission.
    exact classification, unconditional relative soundness, and rejection after
    any failed stage.
 
-Lax annotations link all 26 proofs to their concept statements. Each annotation
-declares an empty list of concept-statement assumptions: the proofs use proved
-helpers directly and do not rely on any of the statement axioms. The permitted
-Lean background axioms remain part of the underlying logic. The production
-definitions themselves depend on no axioms.
+Lax annotations link all 26 proofs to their concept statements and list the
+earlier statements they use. Each such use refers to the concept axiom, so Lax
+records the mathematical dependency as an edge in the proof network. Every
+required statement has a proof, and the entire network closes without circular
+dependencies. Proof modules import the concept interfaces and shared technical
+helpers; they do not import other modules containing submitted proofs. The
+permitted Lean background axioms remain part of the underlying logic. The
+production definitions themselves depend on no axioms.
 
 ## Completion criteria
 

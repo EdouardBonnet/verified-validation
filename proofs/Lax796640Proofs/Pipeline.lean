@@ -1,5 +1,5 @@
 import Lax796640.Pipeline
-import Lax796640Proofs.Validation
+import Lax796640Proofs.Common
 
 namespace Lax796640Proofs.Pipeline
 
@@ -40,6 +40,7 @@ theorem run_tracks (key : ArtifactKey) (events : List Event) :
 ---
 conclusion: Lax796640.Pipeline.approval_requires_evidence
 assumptions:
+  - Lax796640.Validation.validate_exact
 ---
 The controller invariant links every accepted receipt to this artifact and
 this run. Approval additionally supplies the environment and validation checks.
@@ -57,7 +58,7 @@ theorem approval_requires_evidence (key : ArtifactKey) (events : List Event)
       beq_iff_eq] at facts
     rcases facts with ⟨⟨⟨notFailed, conceptsOk⟩, proofsOk⟩, environment, validated⟩
     refine ⟨concepts conceptsOk, proofs proofsOk, inspection data accepted, ?_, ?_,
-      (Validation.validate_exact data).1 validated⟩
+      (Lax796640.Validation.validate_exact data).1 validated⟩
     · intro failed
       have := failure.mpr failed
       simp [this] at notFailed

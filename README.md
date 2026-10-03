@@ -26,9 +26,11 @@ The source is arranged for readers in this order:
 
 The concept files contain no tactic blocks, `sorry`, or noncomputable
 algorithms. Lax keeps statements declared with `axiom` in the concept package
-and their proofs in [proofs/](proofs/Lax796640Proofs.lean). Every annotated proof
-has an empty list of concept-statement assumptions. No executable function
-uses the statement axioms.
+and their proofs in [proofs/](proofs/Lax796640Proofs.lean). Proofs of later results
+use the corresponding concept statements, so the proof network displays their
+dependencies. Every required statement has a proof, and the network closes
+without cycles. Shared technical helpers are kept separate from these submitted
+results. No executable function uses the statement axioms.
 
 From the parent directory, build and replay both packages with:
 

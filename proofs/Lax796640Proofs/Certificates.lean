@@ -1,5 +1,5 @@
 import Lax796640.Certificates
-import Lax796640Proofs.ProofNetworks
+import Lax796640Proofs.Common
 
 namespace Lax796640Proofs.Certificates
 
@@ -152,6 +152,7 @@ theorem certificate_exists (n : Network) (h : WellFormed n) (initial : List Nat)
 ---
 conclusion: Lax796640.Certificates.unproved_certificate
 assumptions:
+  - Lax796640.Certificates.check_exact
 ---
 Exactness turns an omitted statement into a certificate of non-derivability
 from the available rules, without asserting that the statement is false.
@@ -160,6 +161,6 @@ theorem unproved_certificate (n : Network) (h : WellFormed n) (initial : List Na
     (admitted : ∀ a ∈ initial, a ∈ n.statements) (steps : List Step)
     (known : List Nat) (accepted : check n initial steps = some known)
     (a : Nat) (excluded : a ∉ known) : ¬ Derivable n initial a :=
-  fun derived => excluded ((check_exact n h initial admitted steps known accepted a).2 derived)
+  fun derived => excluded ((Lax796640.Certificates.check_exact n h initial admitted steps known accepted a).2 derived)
 
 end Lax796640Proofs.Certificates
