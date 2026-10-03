@@ -1,13 +1,16 @@
-# Verified Lean validation blueprint
+# A verified Lean core for Lax validation
 
-This folder contains a local Lax concept package for a proposed production
-validator written in Lean. Its functions are executable. Its 26 theorem
-statements are **open proof obligations**, and the current Lax service does
-not use this code.
+This folder contains a local Lax submission for a proposed production validator
+written in Lean. Its functions are executable, and all **26 theorem statements
+have proofs** in the separate proof package. The current Lax service does not
+use this code.
 
 Start with [BLUEPRINT.md](BLUEPRINT.md) for the exact scope, trust boundaries,
-proof plan, and production adoption criteria. The main formal guarantee is
+proof structure, and production adoption criteria. The main formal guarantee is
 [`Production.production_sound`](concepts/Lax796640/Production.lean).
+Its [proof](proofs/Lax796640Proofs/Production.lean) applies to the concrete Lean
+entry point under the explicit kernel and input contract. It does not verify
+the current TypeScript pipeline or its surrounding infrastructure.
 
 The source is arranged for readers in this order:
 
@@ -22,14 +25,16 @@ The source is arranged for readers in this order:
 9. [Production](concepts/Lax796640/Production.lean): the intended public entry points.
 
 The concept files contain no tactic blocks, `sorry`, or noncomputable
-algorithms. The declaration `axiom` is Lax's notation for a statement awaiting
-a proof in a separate proof package. No executable function uses those axioms.
-The proof package is deliberately empty at this stage.
+algorithms. Lax keeps statements declared with `axiom` in the concept package
+and their proofs in [proofs/](proofs/Lax796640Proofs.lean). Every annotated proof
+has an empty list of concept-statement assumptions. No executable function
+uses the statement axioms.
 
-From the parent directory, check the concepts with:
+From the parent directory, build and replay both packages with:
 
 ```sh
-lax build verified-validation --only concepts --replay
+lax build verified-validation --replay
+node complexity/scripts/audit-proof-closure.mjs verified-validation
 ```
 
 After building, run the executable regression examples from `concepts/`:
@@ -38,6 +43,7 @@ After building, run the executable regression examples from `concepts/`:
 lake env lean ../checks/Examples.lean
 ```
 
-These checks establish that the blueprint compiles and that the examples behave
-as expected. They do not discharge the open theorem statements. The package
+The replay checks the proof terms, and the closure audit checks that all 26
+statements have closed proofs. The executable examples check representative
+accepted and rejected inputs; they supplement the general proofs. The package
 uses the existing Lax Mathlib cache and has no RAM or other submission dependency.

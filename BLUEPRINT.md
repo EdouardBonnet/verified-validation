@@ -2,14 +2,16 @@
 
 This blueprint describes a replacement for the mathematical decision code in
 Lax's validation pipeline. The intended production implementation is the Lean
-code in this concept package. We will prove properties of these same functions,
-then have the pipeline invoke them. A separately maintained handwritten
+code in this concept package. Properties of these same functions are proved in
+the proof package; having the pipeline invoke them is the next implementation
+stage. A separately maintained handwritten
 translation into TypeScript would reintroduce the correspondence gap that this
 project is meant to remove.
 
-The current deliverable is a type-checked design with executable reference
-implementations and open theorem statements. It is not a proof that Lax's
-current TypeScript implementation is correct, and it is not deployed.
+The current deliverable has executable reference implementations and proofs of
+all 26 stated obligations. The concept statements and executable definitions
+were unchanged during proof development. It is not a proof that Lax's current
+TypeScript implementation is correct, and it is not deployed.
 
 ## The guarantee
 
@@ -24,9 +26,10 @@ proved label at this interface.
 The kernel contract has three clauses: checked theorem declarations follow
 from their actual axiom dependencies; successful kernel type comparisons
 preserve the meaning of the type; and the permitted background axioms hold.
-The validator must derive sound network rules from these declaration-level
-facts. Soundness of every recorded network edge is a theorem goal, not an
-assumption of the headline theorem.
+The validator derives sound network rules from these declaration-level facts.
+The proof of `validation_rules_sound` supplies this intermediate guarantee;
+soundness of every recorded network edge is not an extra hypothesis of the
+headline theorem.
 
 The guarantee is relative. Applying it to a real execution also requires that
 the declaration graph, origin information, comparisons, and receipts faithfully
@@ -35,7 +38,7 @@ putting a Boolean or a digest string in an input record.
 
 ## The concrete core
 
-| Component | Executable function | Independent specification or theorem goal |
+| Component | Executable function | Proved specification or guarantee |
 |---|---|---|
 | Declaration dependencies | `Dependencies.axiomsUsed` | `UsesAxiom`, defined by finite paths |
 | Mathematical acceptance | `Validation.validate` | `Validation.Valid` |
@@ -161,35 +164,46 @@ layout checks, annotation parsing, paper validation, ownership authorization,
 or artifact security. Acceptance by this mathematical core alone is not enough
 to publish a Lax submission.
 
-## Proof plan
+## Proof structure
 
-1. Prove the dependency collector correct. Relate list expansion to bounded
-   paths and show that a reachable vertex has a path without repeated vertices.
-   This establishes the finite round bound, including graphs with cycles.
-2. Prove `validate_exact`. Establish table-check equivalences first, use the
-   collector theorem for declaration and claim checks, then combine the finite
-   Boolean checks. Derive network well-formedness and exact recorded assumptions.
-3. Prove closure soundness and completeness. Induct on rounds for soundness,
-   establish saturation within the number of statements, and induct on finite
-   derivations for completeness. Cover networks with no initial grounding rule.
-4. Prove certificate soundness by an invariant over the witness list. Use final
-   closure to obtain completeness. Construct a bounded certificate by ordering
-   statements according to when closure first establishes them.
-5. Prove the relative soundness chain. Partition each theorem's axiom dependencies
-   into permitted background axioms and recorded statement assumptions. Apply
-   the kernel contract and the checked conclusion comparison, then compose rules
-   by induction on derivations.
-6. Prove the preservation results for added rules, discharged assumptions,
-   rule reordering, injective renaming, and idempotent closure.
-7. Prove controller invariants by induction on the event list. Track the origin
-   key of each receipt and show that failure is permanent within a run. Combine
-   these invariants with validation and certificate correctness for the public
-   entry points.
+1. [FiniteSaturation](proofs/Lax796640Proofs/FiniteSaturation.lean) proves the
+   shared finite bound. A growing set either has reached a fixed point or gains
+   at least one element. It cannot keep growing beyond its finite ambient set.
+2. [Dependencies](proofs/Lax796640Proofs/Dependencies.lean) relates the actual
+   list traversal to this finite-set iteration. Each expansion extends paths;
+   saturation contains every finite path, including paths through cycles.
+3. [ProofNetworks](proofs/Lax796640Proofs/ProofNetworks.lean) uses the same bound
+   for closure. Induction on rounds gives soundness, and induction on finite
+   derivations gives completeness. A separate induction excludes ungrounded
+   proofs when no rule or assumption supplies a starting point.
+4. [Validation](proofs/Lax796640Proofs/Validation.lean) proves exact table
+   lookups and then every Boolean check. The dependency theorem links the
+   executable collector to the independently stated declaration and claim
+   policies. Acceptance gives a well-formed network with exact assumptions.
+5. [Certificates](proofs/Lax796640Proofs/Certificates.lean) maintains soundness
+   and retention of initial assumptions across the witness list. Final closure
+   supplies completeness. Repeatedly choosing an enabled, missing conclusion
+   constructs a certificate with at most one step per statement.
+6. [RelativeSoundness](proofs/Lax796640Proofs/RelativeSoundness.lean) partitions
+   actual dependencies into permitted background axioms and recorded statement
+   assumptions, applies the kernel contract and the checked type comparison,
+   and composes the resulting rules by induction on derivations.
+7. [Stability](proofs/Lax796640Proofs/Stability.lean) proves preservation under
+   added rules, discharged assumptions, reordering, and injective renaming.
+   Substitution of derivations also proves closure idempotent.
+8. [Pipeline](proofs/Lax796640Proofs/Pipeline.lean) tracks each retained receipt
+   back to a matching event in the current run. Its invariant also equates the
+   failure flag with the occurrence of a failed stage.
+9. [Production](proofs/Lax796640Proofs/Production.lean) combines the controller,
+   validator, and certificate results for the exact approved input. It proves
+   exact classification, unconditional relative soundness, and rejection after
+   any failed stage.
 
-These proofs belong in `proofs/`, with Lax annotations linking each proof to its
-concept statement. No production definition may depend on a concept axiom.
-All current theorem statements remain open; none should be treated as a
-verified guarantee until a closed proof has been supplied and checked.
+Lax annotations link all 26 proofs to their concept statements. Each annotation
+declares an empty list of concept-statement assumptions: the proofs use proved
+helpers directly and do not rely on any of the statement axioms. The permitted
+Lean background axioms remain part of the underlying logic. The production
+definitions themselves depend on no axioms.
 
 ## Completion criteria
 

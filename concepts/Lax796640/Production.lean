@@ -15,11 +15,11 @@ The entry point for ordinary proved labels always supplies an empty assumption
 list. This prevents a conditional classification from silently being
 presented as an unconditional proof.
 
-All theorem declarations in this package are currently open obligations.
-Compiling this blueprint checks their types, not their truth. Even after
-proving them, deployment still requires faithful input extraction, authentic
-runner receipts, correct execution, and a publisher that respects rejection
-and publishes the very artifact identified by the approved run.
+The theorem statements are proved in the separate proof package. Replaying
+that package checks their proofs. Deployment still requires faithful input
+extraction, authentic runner receipts, correct execution, and a publisher that
+respects rejection and publishes the very artifact identified by the approved
+run.
 -/
 
 namespace Lax796640.Production
