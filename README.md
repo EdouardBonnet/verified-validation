@@ -1,6 +1,6 @@
 # A verified Lean core for Lax validation
 
-This folder contains a local Lax submission for a proposed production validator
+This folder contains a Lax submission for a proposed production validator
 written in Lean. Its functions are executable, and all **26 theorem statements
 have proofs** in the separate proof package. The current Lax service does not
 use this code.
@@ -11,6 +11,10 @@ proof structure, and production adoption criteria. The main formal guarantee is
 Its [proof](proofs/Lax796640Proofs/Production.lean) applies to the concrete Lean
 entry point under the explicit kernel and input contract. It does not verify
 the current TypeScript pipeline or its surrounding infrastructure.
+
+[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) sets out the next stages:
+certified axiom collection from real Lean declarations, connection to the
+validation rules, and binding approval to the artifacts used in production.
 
 The source is arranged for readers in this order:
 
